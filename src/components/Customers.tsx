@@ -98,7 +98,14 @@ export default function Customers() {
       const meds = medsData || [];
       let signedPhoto = pet.photo_url ? await getPresignedUrl(pet.photo_url) : null;
 
-      setSelectedPetDetails({ ...pet, signedPhoto, health, behavior: behavior || {}, feeding, meds });
+      setSelectedPetDetails({ 
+        ...pet, 
+        signedPhoto, 
+        health, 
+        behavior: behavior || {}, 
+        feeding: feeding || {}, 
+        meds 
+      });
     } catch (err: any) {
       showNotify("error", "Erro ao Buscar Ficha", err.message);
     }
@@ -354,7 +361,7 @@ export default function Customers() {
               <div className="flex flex-col space-y-2">
                 <button onClick={() => handlePrintPet(selectedPetDetails.id)} className="rounded-lg bg-indigo-50 border border-indigo-300 text-indigo-700 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100">🖨️ Imprimir</button>
                 <button onClick={() => { setEditingPetId(selectedPetDetails.id); setIsPetModalOpen(true); setSelectedPetDetails(null); }} className="rounded-lg bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1.5 text-xs font-bold hover:bg-amber-200">✏️ Alterar</button>
-                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-800 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
+                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
               </div>
             </div>
             <div className="flex justify-end pt-2">
