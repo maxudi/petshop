@@ -90,8 +90,6 @@ export default function Customers() {
     try {
       const { data: pet, error: petErr } = await supabase.from("pets").select("*").eq("id", petId).single();
       const { data: health } = await supabase.from("pet_health_profiles").select("*").eq("pet_id", petId).maybeSingle();
-      const { data: behavior } = await supabase.from("pet_behavior_profiles").select("*").eq("pet_id", petId).maybeSingle();
-      const { data: feeding } = await supabase.from("pet_feeding_routines").select("*").eq("pet_id", petId).maybeSingle();
       const { data: medsData } = await supabase.from("pet_medications").select("*").eq("pet_id", petId);
 
       if (petErr) throw petErr;
@@ -102,8 +100,6 @@ export default function Customers() {
         ...pet, 
         signedPhoto, 
         health, 
-        behavior: behavior || {}, 
-        feeding: feeding || {}, 
         meds 
       });
     } catch (err: any) {
@@ -361,9 +357,22 @@ export default function Customers() {
               <div className="flex flex-col space-y-2">
                 <button onClick={() => handlePrintPet(selectedPetDetails.id)} className="rounded-lg bg-indigo-50 border border-indigo-300 text-indigo-700 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100">🖨️ Imprimir</button>
                 <button onClick={() => { setEditingPetId(selectedPetDetails.id); setIsPetModalOpen(true); setSelectedPetDetails(null); }} className="rounded-lg bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1.5 text-xs font-bold hover:bg-amber-200">✏️ Alterar</button>
-                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
+                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-800 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
               </div>
             </div>
+            <div className="bg-slate-100 p-3 rounded-xl border border-slate-300 text-slate-900 text-xs font-medium space-y-1">
+              <h4 className="font-extrabold uppercase text-[10px] tracking-wide mb-1">🏥 Saúde básica</h4>
+              <p><strong>Status de Vacinação:</strong> {selectedPetDetails.health?.vaccines_up_to_date ? "✅ Em Dia" : "❌ Desatualizada"}</p>
+              <p><strong>Patologias Registradas:</strong> {selectedPetDetails.health?.has_diseases || "Nenhuma doença relatada"}</p>
+            </div>
+            {selectedPetDetails.meds && selectedPetDetails.meds.length > 0 && (
+              <div className="bg-purple-50 border border-purple-300 p-3 rounded-xl text-purple-950 text-xs font-medium">
+                <h4 className="font-bold text-purple-900 uppercase text-[10px] mb-1">💊 Medicamentos Ativos</h4>
+                {selectedPetDetails.meds.map((m: any, i: number) => (
+                  <p key={i}>• <strong>{m.medication_name}</strong> ({m.dosage}) — Horários: {m.frequencies?.join(", ")}</p>
+                ))}
+              </div>
+            )}
             <div className="flex justify-end pt-2">
               <button type="button" onClick={() => setSelectedPetDetails(null)} className="w-full sm:w-auto rounded-xl border-2 border-slate-400 bg-slate-300 text-slate-800 px-5 py-2.5 text-xs font-extrabold shadow-sm">Fechar Prontuário</button>
             </div>
