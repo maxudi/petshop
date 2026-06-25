@@ -360,7 +360,7 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
 
         <div className="flex border-b border-slate-200 bg-slate-100 px-4">
           {(["basics", "health", "behavior", "routines"] as TabType[]).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === tab ? "border-indigo-600 text-indigo-600 font-extrabold" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+            <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`px-4 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === tab ? "border-indigo-600 text-indigo-600 font-extrabold" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
               {tab === "basics" && "🐾 Dados Básicos"}
               {tab === "health" && "🏥 Saúde & Vet"}
               {tab === "behavior" && "🧠 Comportamento"}
@@ -408,21 +408,42 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <input type="date" className={inputClass} value={birthDate} onChange={e => setBirthDate(e.target.value)} />
-                <select className={inputClass} value={gender} onChange={e => setGender(e.target.value)}><option value="M">Macho</option><option value="F">Fêmea</option></select>
-                <select className={inputClass} value={coat} onChange={e => setCoat(e.target.value)}>{COAT_TYPES.map((type, idx) => <option key={idx} value={type}>{type}</option>)}</select>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nascimento</label>
+                  <input type="date" className={inputClass} value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Sexo</label>
+                  <select className={inputClass} value={gender} onChange={e => setGender(e.target.value)}><option value="M">Macho</option><option value="F">Fêmea</option></select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Pelagem</label>
+                  <select className={inputClass} value={coat} onChange={e => setCoat(e.target.value)}>{COAT_TYPES.map((type, idx) => <option key={idx} value={type}>{type}</option>)}</select>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <select className={inputClass} value={size} onChange={e => setSize(e.target.value)}>
-                  <option value="mini">Mini / Toy</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option><option value="gigante">Gigante</option>
-                </select>
-                <input type="number" step="0.1" className={inputClass} value={weight} onChange={e => setWeight(e.target.value)} />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Porte</label>
+                  <select className={inputClass} value={size} onChange={e => setSize(e.target.value)}>
+                    <option value="mini">Mini / Toy</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option><option value="gigante">Gigante</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Peso (kg)</label>
+                  <input type="number" step="0.1" className={inputClass} value={weight} onChange={e => setWeight(e.target.value)} />
+                </div>
                 <div className="flex items-center pt-5"><label className="flex items-center space-x-2 font-bold text-slate-800 cursor-pointer"><input type="checkbox" className="w-4 h-4 rounded border-slate-400 text-indigo-600" checked={castrated} onChange={e => setCastrated(e.target.checked)} /> <span>Castrado?</span></label></div>
               </div>
 
-              <select className={inputClass} value={temperament} onChange={e => setTemperament(e.target.value)}>{TEMPERAMENT_TYPES.map((type, idx) => <option key={idx} value={type}>{type}</option>)}</select>
-              <textarea rows={2} placeholder="Insira detalhes adicionais sobre o animal..." className="w-full rounded-xl border border-slate-300 bg-slate-100 p-2.5 text-sm text-slate-900 font-medium focus:bg-white focus:border-indigo-600 focus:outline-none" value={generalObservations} onChange={e => setGeneralObservations(e.target.value)} />
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Temperamento Padronizado</label>
+                <select className={inputClass} value={temperament} onChange={e => setTemperament(e.target.value)}>{TEMPERAMENT_TYPES.map((type, idx) => <option key={idx} value={type}>{type}</option>)}</select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Observações Gerais / Anotações Livres</label>
+                <textarea rows={2} placeholder="Insira detalhes adicionais sobre o animal..." className="w-full rounded-xl border border-slate-300 bg-slate-100 p-2.5 text-sm text-slate-900 font-medium focus:bg-white focus:border-indigo-600 focus:outline-none" value={generalObservations} onChange={e => setGeneralObservations(e.target.value)} />
+              </div>
             </div>
           )}
 
@@ -431,7 +452,10 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <label className="flex items-center space-x-2 font-bold text-slate-800 cursor-pointer"><input type="checkbox" className="w-4 h-4" checked={vaccinesUpToDate} onChange={e => setVaccinesUpToDate(e.target.checked)} /> <span>Vacinas em dia</span></label>
-                <input type="date" className={inputClass} value={lastDeworming} onChange={e => setLastDeworming(e.target.value)} />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Último Vermífugo</label>
+                  <input type="date" className={inputClass} value={lastDeworming} onChange={e => setLastDeworming(e.target.value)} />
+                </div>
               </div>
 
               <div ref={diseaseRef} className="relative">
@@ -448,8 +472,24 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
                 )}
               </div>
 
-              <input type="text" placeholder="Restrições alimentares ou Alergias" className={inputClass} value={allergies} onChange={e => setAllergies(e.target.value)} />
-              <div className="grid grid-cols-3 gap-2"><input type="text" placeholder="Vet Externo" className={inputClass} value={externalVet} onChange={e => setExternalVet(e.target.value)} /><input type="text" placeholder="Clínica Vet" className={inputClass} value={externalClinic} onChange={e => setExternalClinic(e.target.value)} /><input type="text" placeholder="Telefone do Vet" className={inputClass} value={externalPhone} onChange={e => setExternalPhone(maskPhone(e.target.value))} /></div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Restrições Alimentares ou Alergias</label>
+                <input type="text" placeholder="Restrições alimentares ou Alergias" className={inputClass} value={allergies} onChange={e => setAllergies(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Vet Externo</label>
+                  <input type="text" placeholder="Vet Externo" className={inputClass} value={externalVet} onChange={e => setExternalVet(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Clínica Vet</label>
+                  <input type="text" placeholder="Clínica Vet" className={inputClass} value={externalClinic} onChange={e => setExternalClinic(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Telefone do Vet</label>
+                  <input type="text" placeholder="Telefone do Vet" className={inputClass} value={externalPhone} onChange={e => setExternalPhone(maskPhone(e.target.value))} />
+                </div>
+              </div>
 
               <div className="pt-4 border-t border-slate-200 space-y-3">
                 <div className="relative flex items-center justify-center border-2 border-dashed border-slate-400 rounded-xl p-4 bg-slate-100 hover:bg-slate-200 cursor-pointer">
@@ -474,18 +514,36 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
           {activeTab === "behavior" && (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-2 bg-slate-100 p-3 rounded-xl border border-slate-200">
-                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithDogs} onChange={e => setGoodWithDogs(target.checked)} /> <span>Aceita Cães</span></label>
-                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithCats} onChange={e => setGoodWithCats(target.checked)} /> <span>Aceita Gatos</span></label>
-                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithChildren} onChange={e => setGoodWithChildren(target.checked)} /> <span>Aceita Crianças</span></label>
+                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithDogs} onChange={e => setGoodWithDogs(e.target.checked)} /> <span>Aceita Cães</span></label>
+                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithCats} onChange={e => setGoodWithCats(e.target.checked)} /> <span>Aceita Gatos</span></label>
+                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithChildren} onChange={e => setGoodWithChildren(e.target.checked)} /> <span>Aceita Crianças</span></label>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs text-red-700 font-bold">
-                <label className="flex items-center space-x-1"><input type="checkbox" checked={excessiveBark} onChange={e => setExcessiveBark(target.checked)} /> <span>Vocaliza muito</span></label>
-                <label className="flex items-center space-x-1"><input type="checkbox" checked={anxiety} onChange={e => setAnxiety(target.checked)} /> <span>Ansiedade Separação</span></label>
-                <label className="flex items-center space-x-1 text-red-800 font-extrabold"><input type="checkbox" checked={aggressiveness} onChange={e => setAggressiveness(target.checked)} /> <span>Histórico Reativo</span></label>
+                <label className="flex items-center space-x-1"><input type="checkbox" checked={excessiveBark} onChange={e => setExcessiveBark(e.target.checked)} /> <span>Vocaliza muito</span></label>
+                <label className="flex items-center space-x-1"><input type="checkbox" checked={anxiety} onChange={e => setAnxiety(e.target.checked)} /> <span>Ansiedade Separação</span></label>
+                <label className="flex items-center space-x-1 text-red-800 font-extrabold"><input type="checkbox" checked={aggressiveness} onChange={e => setAggressiveness(e.target.checked)} /> <span>Histórico Reativo</span></label>
               </div>
-              <input type="text" placeholder="Fobias / Medos..." className={inputClass} value={fears} onChange={e => setFears(target.value)} />
-              <div className="grid grid-cols-2 gap-4"><input type="text" placeholder="Horários de passeio" className={inputClass} value={walkSchedule} onChange={e => setWalkSchedule(target.value)} /><input type="text" placeholder="Onde costuma dormir?" className={inputClass} value={sleepingSpot} onChange={e => setSleepingSpot(target.value)} /></div>
-              <div className="grid grid-cols-2 gap-4 items-center"><label className="flex items-center space-x-2 font-bold text-slate-800"><input type="checkbox" checked={furnitureAllowed} onChange={e => setFurnitureAllowed(target.checked)} /> <span>Sobe em sofás/camas?</span></label><input type="text" placeholder="Hábitos de eliminação" className={inputClass} value={eliminationHabits} onChange={e => setEliminationHabits(target.value)} /></div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Fobias / Medos</label>
+                <input type="text" placeholder="Fobias / Medos..." className={inputClass} value={fears} onChange={e => setFears(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Horários de passeio</label>
+                  <input type="text" placeholder="Horários de passeio" className={inputClass} value={walkSchedule} onChange={e => setWalkSchedule(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Onde costuma dormir?</label>
+                  <input type="text" placeholder="Onde costuma dormir?" className={inputClass} value={sleepingSpot} onChange={e => setSleepingSpot(e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <label className="flex items-center space-x-2 font-bold text-slate-800"><input type="checkbox" checked={furnitureAllowed} onChange={e => setFurnitureAllowed(e.target.checked)} /> <span>Sobe em sofás/camas?</span></label>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Hábitos de eliminação</label>
+                  <input type="text" placeholder="Hábitos de eliminação" className={inputClass} value={eliminationHabits} onChange={e => setEliminationHabits(e.target.value)} />
+                </div>
+              </div>
             </div>
           )}
 
@@ -493,13 +551,38 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
           {activeTab === "routines" && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-xl space-y-3 border border-blue-300">
-                <div className="grid grid-cols-2 gap-2"><input type="text" placeholder="Nome da Ração" className={inputClass} value={foodName} onChange={e => setFoodName(target.value)} /><input type="text" placeholder="Quantidade por porção" className={inputClass} value={amountPerFeeding} onChange={e => setAmountPerFeeding(target.value)} /></div>
-                <input type="text" placeholder="Horários das refeições" className={inputClass} value={foodHours} onChange={e => setFoodHours(target.value)} />
-                <label className="flex items-center space-x-2 text-xs font-bold text-blue-900 cursor-pointer"><input type="checkbox" checked={allowsTreats} onChange={e => setAllowsTreats(target.checked)} /> <span>Autorizado a ganhar petiscos?</span></label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-bold text-blue-900 uppercase mb-1">Nome da Ração</label>
+                    <input type="text" placeholder="Nome da Ração" className={inputClass} value={foodName} onChange={e => setFoodName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-blue-900 uppercase mb-1">Quantidade por porção</label>
+                    <input type="text" placeholder="Quantidade por porção" className={inputClass} value={amountPerFeeding} onChange={e => setAmountPerFeeding(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-blue-900 uppercase mb-1">Horários das refeições</label>
+                  <input type="text" placeholder="Horários das refeições" className={inputClass} value={foodHours} onChange={e => setFoodHours(e.target.value)} />
+                </div>
+                <label className="flex items-center space-x-2 text-xs font-bold text-blue-900 cursor-pointer"><input type="checkbox" checked={allowsTreats} onChange={e => setAllowsTreats(e.target.checked)} /> <span>Autorizado a ganhar petiscos?</span></label>
               </div>
 
               <div className="bg-purple-50 p-4 rounded-xl space-y-3 border border-purple-300">
-                <div className="grid grid-cols-3 gap-2 items-end"><input type="text" placeholder="Remédio ativo..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedName} onChange={e => setTmpMedName(target.value)} /><input type="text" placeholder="Dosagem..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedDosage} onChange={e => setTmpMedDosage(target.value)} /><input type="text" placeholder="Horários..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedHours} onChange={e => setTmpMedHours(target.value)} /></div>
+                <div className="grid grid-cols-3 gap-2 items-end">
+                  <div>
+                    <label className="block text-xs font-bold text-purple-900 uppercase mb-1">Remédio ativo</label>
+                    <input type="text" placeholder="Remédio ativo..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedName} onChange={e => setTmpMedName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-purple-900 uppercase mb-1">Dosagem</label>
+                    <input type="text" placeholder="Dosagem..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedDosage} onChange={e => setTmpMedDosage(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-purple-900 uppercase mb-1">Horários</label>
+                    <input type="text" placeholder="Horários..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedHours} onChange={e => setTmpMedHours(e.target.value)} />
+                  </div>
+                </div>
                 <button type="button" onClick={handleAddMedication} className="w-full bg-purple-700 text-white rounded-xl p-2.5 text-xs font-bold shadow-xs">+ Incluir Medicamento na Lista</button>
                 {medicationsList.length > 0 && (
                   <div className="mt-3 overflow-hidden rounded-xl border border-purple-300 bg-white">

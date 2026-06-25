@@ -90,7 +90,7 @@ export default function Customers() {
     try {
       const { data: pet, error: petErr } = await supabase.from("pets").select("*").eq("id", petId).single();
       const { data: health } = await supabase.from("pet_health_profiles").select("*").eq("pet_id", petId).maybeSingle();
-      const { data: behavior = {} } = await supabase.from("pet_behavior_profiles").select("*").eq("pet_id", petId).maybeSingle();
+      const { data: behavior } = await supabase.from("pet_behavior_profiles").select("*").eq("pet_id", petId).maybeSingle();
       const { data: feeding } = await supabase.from("pet_feeding_routines").select("*").eq("pet_id", petId).maybeSingle();
       const { data: medsData } = await supabase.from("pet_medications").select("*").eq("pet_id", petId);
 
@@ -98,7 +98,7 @@ export default function Customers() {
       const meds = medsData || [];
       let signedPhoto = pet.photo_url ? await getPresignedUrl(pet.photo_url) : null;
 
-      setSelectedPetDetails({ ...pet, signedPhoto, health, behavior, feeding, meds });
+      setSelectedPetDetails({ ...pet, signedPhoto, health, behavior: behavior || {}, feeding, meds });
     } catch (err: any) {
       showNotify("error", "Erro ao Buscar Ficha", err.message);
     }
@@ -116,7 +116,7 @@ export default function Customers() {
       const meds = medsData || [];
       let petPhotoUrl = "";
       if (pet.photo_url) {
-        petPhotoUrl = await getPresignedUrl(pet.photo_url);
+        petPhotoUrl = await getPresignedUrl(pet.photo_url) || "";
       }
 
       const printWindow = window.open("", "_blank");
@@ -127,31 +127,23 @@ export default function Customers() {
           <head>
             <title>Ficha - ${pet.name}</title>
             <style>
-              @media print {
-                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 15px; }
-              }
-              body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #334155; margin: 30px; line-height: 1.6; font-size: 13px; background-color: #ffffff; }
+              @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 15px; } }
+              body { font-family: 'Segoe UI', Arial, sans-serif; color: #334155; margin: 30px; line-height: 1.6; font-size: 13px; }
               .main-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #0f172a; padding-bottom: 16px; margin-bottom: 25px; }
               .header-text { flex: 1; }
-              .main-header h1 { margin: 0; font-size: 24px; color: #1e293b; text-transform: uppercase; font-weight: 800; letter-spacing: -0.5px; }
-              .main-header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-weight: 500; }
-              .pet-photo-container { width: 90px; height: 90px; border-radius: 12px; border: 2px solid #cbd5e1; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center; margin-left: 20px; }
+              .main-header h1 { margin: 0; font-size: 24px; color: #1e293b; text-transform: uppercase; font-weight: 800; }
+              .pet-photo-container { width: 90px; height: 90px; border-radius: 12px; border: 2px solid #cbd5e1; overflow: hidden; background: #f8fafc; }
               .pet-photo-container img { width: 100%; height: 100%; object-fit: cover; }
-              .pet-photo-placeholder { font-size: 32px; filter: grayscale(100%); opacity: 0.4; }
-              .section-title { font-size: 12px; font-weight: 800; background-color: #f1f5f9; color: #1e3a8a; padding: 8px 12px; margin-top: 22px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; border-left: 5px solid #2563eb; border-radius: 0 8px 8px 0; }
-              .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 20px; padding: 0 6px; }
-              .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; padding: 0 6px; }
+              .section-title { font-size: 12px; font-weight: 800; background-color: #f1f5f9; color: #1e3a8a; padding: 8px 12px; margin-top: 22px; text-transform: uppercase; border-left: 5px solid #2563eb; }
+              .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+              .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
               .field { font-size: 13px; color: #475569; }
-              .field strong { color: #0f172a; font-weight: 600; display: inline-block; margin-right: 3px; }
-              .badge { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
-              .badge-success { background: #dcfce7; color: #15803d; }
-              .badge-danger { background: #fee2e2; color: #b91c1c; }
-              .table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 12px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
-              .table th { background: #f8fafc; text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; }
-              .table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155; }
-              .table tr:last-child td { border-bottom: none; }
-              .obs-box { background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-style: italic; color: #334155; margin-top: 8px; line-height: 1.5; }
-              .footer { margin-top: 45px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; font-weight: 500; }
+              .field strong { color: #0f172a; font-weight: 600; }
+              .badge { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+              .table { width: 100%; border-collapse: collapse; margin-top: 12px; border: 1px solid #e2e8f0; }
+              .table th { background: #f8fafc; padding: 8px; font-size: 11px; border-bottom: 1px solid #e2e8f0; }
+              .table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+              .footer { margin-top: 45px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; }
             </style>
           </head>
           <body>
@@ -161,7 +153,7 @@ export default function Customers() {
                 <p>Identificação Organizacional Corporativa • Emissão Unificada por Controle de Tenant</p>
               </div>
               <div class="pet-photo-container">
-                ${petPhotoUrl ? `<img src="${petPhotoUrl}" alt="" />` : `<span class="pet-photo-placeholder">${pet.species === "Gato" ? "🐱" : "🐶"}</span>`}
+                ${petPhotoUrl ? `<img src="${petPhotoUrl}" alt="" />` : `<span style="font-size:32px; opacity:0.4;">🐾</span>`}
               </div>
             </div>
 
@@ -170,10 +162,6 @@ export default function Customers() {
               <div class="field"><strong>Responsável:</strong> ${tutor.name}</div>
               <div class="field"><strong>Telefone:</strong> ${tutor.phone}</div>
             </div>
-            <div class="grid">
-              <div class="field"><strong>Documento CPF:</strong> ${tutor.cpf || "Não cadastrado"}</div>
-              <div class="field"><strong>E-mail institucional:</strong> ${tutor.email || "Não cadastrado"}</div>
-            </div>
 
             <div class="section-title">II - Características Gerais do Animal</div>
             <div class="grid-3">
@@ -181,31 +169,22 @@ export default function Customers() {
               <div class="field"><strong>Espécie:</strong> <span class="badge">${pet.species}</span></div>
               <div class="field"><strong>Raça Cadastrada:</strong> ${pet.breed}</div>
             </div>
-            <div class="grid-3">
-              <div class="field"><strong>Nascimento:</strong> ${pet.birth_date || "Não informada"}</div>
-              <div class="field"><strong>Gênero / Sexo:</strong> ${pet.gender === "M" ? "Macho" : "Fêmea"}</div>
-              <div class="field"><strong>Morfologia / Porte:</strong> ${pet.size ? pet.size.toUpperCase() : "MEDIO"}</div>
-            </div>
 
             <div class="section-title">III - Avaliação Clínica e Sanitária</div>
             <div class="grid">
-              <div class="field"><strong>Protocolo de Vacinas:</strong> <span class="badge ${health?.vaccines_up_to_date ? "badge-success" : "badge-danger"}">${health?.vaccines_up_to_date ? "Atualizado / Em Dia" : "Desatualizado"}</span></div>
+              <div class="field"><strong>Protocolo de Vacinas:</strong> ${health?.vaccines_up_to_date ? "Em Dia" : "Desatualizado"}</div>
               <div class="field"><strong>Último Vermífugo:</strong> ${health?.last_deworming_date || "Sem registro"}</div>
             </div>
 
             <div class="section-title">V - Prescrição Dietética e Farmacológica Diária</div>
             <table class="table">
-              <thead>
-                <tr><th>Medicamento</th><th>Dosagem</th><th>Horários</th></tr>
-              </thead>
+              <thead><tr><th>Medicamento</th><th>Dosagem</th><th>Horários</th></tr></thead>
               <tbody>
-                ${meds.length === 0 ? "<tr><td colspan='3' style='font-style:italic; color:#64748b;'>Nenhum atalho farmacológico ativo.</td></tr>" : meds.map((m: any) => `<tr><td><strong>${m.medication_name}</strong></td><td>${m.dosage}</td><td>${m.frequencies?.join(", ") || "-"}</td></tr>`).join("")}
+                ${meds.length === 0 ? "<tr><td colspan='3'>Nenhum ativo.</td></tr>" : meds.map((m: any) => `<tr><td><strong>${m.medication_name}</strong></td><td>${m.dosage}</td><td>${m.frequencies?.join(", ") || "-"}</td></tr>`).join("")}
               </tbody>
             </table>
 
-            <div class="footer">
-              Ficha Clínica Oficial emitida em ${new Date().toLocaleDateString("pt-BR")} — Responsável Técnico
-            </div>
+            <div class="footer">Ficha Clínica Oficial emitida em ${new Date().toLocaleDateString("pt-BR")}</div>
           </body>
         </html>
       `);
