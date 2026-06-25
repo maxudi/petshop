@@ -1,5 +1,5 @@
 // src/components/PetFormModal.tsx
-import { useState, useEffect, useRef, DragEvent } from "react";
+import { useState, useEffect, useRef, type DragEvent } from "react";
 import { supabase } from "../lib/supabase.ts";
 import { uploadPetFile } from "../lib/storage.ts";
 import NotificationModal from "./NotificationModal.tsx";
@@ -35,15 +35,12 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
   const [loading, setLoading] = useState(false);
   const isEditMode = !!petId;
 
-  // Estado da Notificação customizada
   const [noti, setNoti] = useState({ isOpen: false, type: "success" as "success"|"error"|"warning", title: "", message: "" });
   const showNotify = (type: "success"|"error"|"warning", title: string, message: string) => {
     setNoti({ isOpen: true, type, title, message });
   };
 
-  // --- ESTADOS DO FORMULÁRIO ---
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
 
   const [name, setName] = useState("");
@@ -126,7 +123,7 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
       if (file.type.startsWith("image/")) {
         setSelectedFile(file);
       } else {
-        showNotify("warning", "Ficheiro Inválido", "Por favor, arraste apenas ficheiros de imagem (JPG, PNG).");
+        showNotify("warning", "Ficheiro Inválido", "Por favor, arraste apenas imagens.");
       }
     }
   };
@@ -197,7 +194,6 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
           setTemperament(pet.temperament || "Dócil / Sociável");
           setGeneralObservations(pet.general_observations || "");
           setCastrated(!!pet.castrated);
-          setCurrentPhotoUrl(pet.photo_url || null);
         }
 
         const { data: health } = await supabase.from("pet_health_profiles").select("*").eq("pet_id", petId).maybeSingle();
@@ -248,7 +244,7 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
 
   const handleAddMedication = () => {
     if (!tmpMedName.trim() || !tmpMedDosage.trim()) {
-      showNotify("warning", "Campos Vazios", "Preencha o nome do medicamento e a dosagem antes de adicionar.");
+      showNotify("warning", "Campos Vazios", "Preencha o nome do medicamento e a dosagem.");
       return;
     }
     setMedicationsList([...medicationsList, { medication_name: tmpMedName.trim(), dosage: tmpMedDosage.trim(), frequencies: tmpMedHours.trim() }]);
@@ -346,7 +342,6 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
         await supabase.from("pet_medications").insert(medsPayload);
       }
 
-      // Se der tudo certo, chama a função de fechamento de sucesso
       onSuccess();
     } catch (err: any) {
       showNotify("error", "Erro ao Sincronizar", err.message);
@@ -456,7 +451,6 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
               <input type="text" placeholder="Restrições alimentares ou Alergias" className={inputClass} value={allergies} onChange={e => setAllergies(e.target.value)} />
               <div className="grid grid-cols-3 gap-2"><input type="text" placeholder="Vet Externo" className={inputClass} value={externalVet} onChange={e => setExternalVet(e.target.value)} /><input type="text" placeholder="Clínica Vet" className={inputClass} value={externalClinic} onChange={e => setExternalClinic(e.target.value)} /><input type="text" placeholder="Telefone do Vet" className={inputClass} value={externalPhone} onChange={e => setExternalPhone(maskPhone(e.target.value))} /></div>
 
-              {/* Anexos */}
               <div className="pt-4 border-t border-slate-200 space-y-3">
                 <div className="relative flex items-center justify-center border-2 border-dashed border-slate-400 rounded-xl p-4 bg-slate-100 hover:bg-slate-200 cursor-pointer">
                   <input type="file" multiple accept="image/*,application/pdf" onChange={handleAddAttachment} className="absolute inset-0 opacity-0 cursor-pointer" />
@@ -480,18 +474,18 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
           {activeTab === "behavior" && (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-2 bg-slate-100 p-3 rounded-xl border border-slate-200">
-                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithDogs} onChange={e => setGoodWithDogs(e.target.checked)} /> <span>Aceita Cães</span></label>
-                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithCats} onChange={e => setGoodWithCats(e.target.checked)} /> <span>Aceita Gatos</span></label>
-                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithChildren} onChange={e => setGoodWithChildren(e.target.checked)} /> <span>Aceita Crianças</span></label>
+                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithDogs} onChange={e => setGoodWithDogs(target.checked)} /> <span>Aceita Cães</span></label>
+                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithCats} onChange={e => setGoodWithCats(target.checked)} /> <span>Aceita Gatos</span></label>
+                <label className="flex items-center space-x-1 font-semibold text-slate-800"><input type="checkbox" checked={goodWithChildren} onChange={e => setGoodWithChildren(target.checked)} /> <span>Aceita Crianças</span></label>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs text-red-700 font-bold">
-                <label className="flex items-center space-x-1"><input type="checkbox" checked={excessiveBark} onChange={e => setExcessiveBark(e.target.checked)} /> <span>Vocaliza muito</span></label>
-                <label className="flex items-center space-x-1"><input type="checkbox" checked={anxiety} onChange={e => setAnxiety(e.target.checked)} /> <span>Ansiedade Separação</span></label>
-                <label className="flex items-center space-x-1 text-red-800 font-extrabold"><input type="checkbox" checked={aggressiveness} onChange={e => setAggressiveness(e.target.checked)} /> <span>Histórico Reativo</span></label>
+                <label className="flex items-center space-x-1"><input type="checkbox" checked={excessiveBark} onChange={e => setExcessiveBark(target.checked)} /> <span>Vocaliza muito</span></label>
+                <label className="flex items-center space-x-1"><input type="checkbox" checked={anxiety} onChange={e => setAnxiety(target.checked)} /> <span>Ansiedade Separação</span></label>
+                <label className="flex items-center space-x-1 text-red-800 font-extrabold"><input type="checkbox" checked={aggressiveness} onChange={e => setAggressiveness(target.checked)} /> <span>Histórico Reativo</span></label>
               </div>
-              <input type="text" placeholder="Fobias / Medos..." className={inputClass} value={fears} onChange={e => setFears(e.target.value)} />
-              <div className="grid grid-cols-2 gap-4"><input type="text" placeholder="Horários de passeio" className={inputClass} value={walkSchedule} onChange={e => setWalkSchedule(e.target.value)} /><input type="text" placeholder="Onde costuma dormir?" className={inputClass} value={sleepingSpot} onChange={e => setSleepingSpot(e.target.value)} /></div>
-              <div className="grid grid-cols-2 gap-4 items-center"><label className="flex items-center space-x-2 font-bold text-slate-800"><input type="checkbox" checked={furnitureAllowed} onChange={e => setFurnitureAllowed(e.target.checked)} /> <span>Sobe em sofás/camas?</span></label><input type="text" placeholder="Hábitos de eliminação" className={inputClass} value={eliminationHabits} onChange={e => setEliminationHabits(e.target.value)} /></div>
+              <input type="text" placeholder="Fobias / Medos..." className={inputClass} value={fears} onChange={e => setFears(target.value)} />
+              <div className="grid grid-cols-2 gap-4"><input type="text" placeholder="Horários de passeio" className={inputClass} value={walkSchedule} onChange={e => setWalkSchedule(target.value)} /><input type="text" placeholder="Onde costuma dormir?" className={inputClass} value={sleepingSpot} onChange={e => setSleepingSpot(target.value)} /></div>
+              <div className="grid grid-cols-2 gap-4 items-center"><label className="flex items-center space-x-2 font-bold text-slate-800"><input type="checkbox" checked={furnitureAllowed} onChange={e => setFurnitureAllowed(target.checked)} /> <span>Sobe em sofás/camas?</span></label><input type="text" placeholder="Hábitos de eliminação" className={inputClass} value={eliminationHabits} onChange={e => setEliminationHabits(target.value)} /></div>
             </div>
           )}
 
@@ -499,13 +493,13 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
           {activeTab === "routines" && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-xl space-y-3 border border-blue-300">
-                <div className="grid grid-cols-2 gap-2"><input type="text" placeholder="Nome da Ração" className={inputClass} value={foodName} onChange={e => setFoodName(e.target.value)} /><input type="text" placeholder="Quantidade por porção" className={inputClass} value={amountPerFeeding} onChange={e => setAmountPerFeeding(e.target.value)} /></div>
-                <input type="text" placeholder="Horários das refeições" className={inputClass} value={foodHours} onChange={e => setFoodHours(e.target.value)} />
-                <label className="flex items-center space-x-2 text-xs font-bold text-blue-900 cursor-pointer"><input type="checkbox" checked={allowsTreats} onChange={e => setAllowsTreats(e.target.checked)} /> <span>Autorizado a ganhar petiscos?</span></label>
+                <div className="grid grid-cols-2 gap-2"><input type="text" placeholder="Nome da Ração" className={inputClass} value={foodName} onChange={e => setFoodName(target.value)} /><input type="text" placeholder="Quantidade por porção" className={inputClass} value={amountPerFeeding} onChange={e => setAmountPerFeeding(target.value)} /></div>
+                <input type="text" placeholder="Horários das refeições" className={inputClass} value={foodHours} onChange={e => setFoodHours(target.value)} />
+                <label className="flex items-center space-x-2 text-xs font-bold text-blue-900 cursor-pointer"><input type="checkbox" checked={allowsTreats} onChange={e => setAllowsTreats(target.checked)} /> <span>Autorizado a ganhar petiscos?</span></label>
               </div>
 
               <div className="bg-purple-50 p-4 rounded-xl space-y-3 border border-purple-300">
-                <div className="grid grid-cols-3 gap-2 items-end"><input type="text" placeholder="Remédio ativo..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedName} onChange={e => setTmpMedName(e.target.value)} /><input type="text" placeholder="Dosagem..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedDosage} onChange={e => setTmpMedDosage(e.target.value)} /><input type="text" placeholder="Horários..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedHours} onChange={e => setTmpMedHours(e.target.value)} /></div>
+                <div className="grid grid-cols-3 gap-2 items-end"><input type="text" placeholder="Remédio ativo..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedName} onChange={e => setTmpMedName(target.value)} /><input type="text" placeholder="Dosagem..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedDosage} onChange={e => setTmpMedDosage(target.value)} /><input type="text" placeholder="Horários..." className="bg-white rounded-xl border border-slate-300 p-2 text-xs font-medium" value={tmpMedHours} onChange={e => setTmpMedHours(target.value)} /></div>
                 <button type="button" onClick={handleAddMedication} className="w-full bg-purple-700 text-white rounded-xl p-2.5 text-xs font-bold shadow-xs">+ Incluir Medicamento na Lista</button>
                 {medicationsList.length > 0 && (
                   <div className="mt-3 overflow-hidden rounded-xl border border-purple-300 bg-white">
@@ -521,7 +515,6 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
           )}
         </div>
 
-        {/* Rodapé */}
         <div className="p-6 border-t border-slate-200 flex justify-end gap-3 bg-slate-100 rounded-b-2xl">
           <button type="button" onClick={onClose} className="rounded-xl border-2 border-slate-400 bg-slate-300 hover:bg-slate-400 px-5 py-2 text-xs font-extrabold text-slate-800 cursor-pointer shadow-sm">Fechar</button>
           <button type="button" disabled={loading} onClick={handleSavePet} className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-extrabold text-white hover:bg-indigo-700 cursor-pointer shadow-md">{loading ? "Processando..." : "Salvar Dados"}</button>
@@ -529,14 +522,7 @@ export default function PetFormModal({ customerId, petId, onClose, onSuccess }: 
 
       </div>
 
-      {/* MODAL INTERNO DE NOTIFICAÇÃO */}
-      <NotificationModal 
-        isOpen={noti.isOpen}
-        type={noti.type}
-        title={noti.title}
-        message={noti.message}
-        onClose={() => setNoti({ ...noti, isOpen: false })}
-      />
+      <NotificationModal isOpen={noti.isOpen} type={noti.type} title={noti.title} message={noti.message} onClose={() => setNoti({ ...noti, isOpen: false })} />
     </div>
   );
 }
