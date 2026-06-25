@@ -7,7 +7,7 @@ import NotificationModal from "./NotificationModal.tsx";
 
 interface Customer {
   id: string;
-  tenant_id: string; // Adicionado para gerar o link multi-tenant de forma estrita
+  tenant_id: string;
   name: string;
   phone: string;
   cpf: string;
@@ -60,17 +60,15 @@ export default function Customers() {
     setNoti({ isOpen: true, type, title, message });
   };
 
-  // --- FUNÇÃO ADICIONADA: GERADOR E COPIADOR DE LINK MÁGICO ---
   const handleCopyExternalLink = (customer: Customer) => {
     const baseUrl = window.location.origin;
-    // Monta o link levando o tenant_id e o customer_id em formato de query params estritos
     const externalLink = `${baseUrl}/prontuario-externo?t=${customer.tenant_id}&c=${customer.id}`;
     
     navigator.clipboard.writeText(externalLink);
     showNotify(
       "success", 
       "Link Copiado! 🔗", 
-      `O link de auto-preenchimento para "${customer.name}" foi copiado para a área de transferência. Envie via WhatsApp!`
+      `O link de auto-preenchimento para "${customer.name}" foi copiado. Já pode enviar pelo WhatsApp!`
     );
   };
 
@@ -112,14 +110,17 @@ export default function Customers() {
   const handleOpenPetDetails = async (petId: string) => {
     try {
       const { data: pet, error: petErr } = await supabase.from("pets").select("*").eq("id", petId).single();
-      const { data: health } = await supabase.from("pet_health_profiles").select("*").eq("pet_id", petId).maybeSingle();
       const { data: medsData } = await supabase.from("pet_medications").select("*").eq("pet_id", petId);
 
       if (petErr) throw petErr;
       const meds = medsData || [];
       const signedPhoto = pet.photo_url ? await getPresignedUrl(pet.photo_url) : null;
 
-      setSelectedPetDetails({ ...pet, signedPhoto, health, meds });
+      setSelectedPetDetails({ 
+        ...pet, 
+        signedPhoto, 
+        meds 
+      });
     } catch (err: any) {
       showNotify("error", "Erro ao Buscar Ficha", err.message);
     }
@@ -176,15 +177,33 @@ export default function Customers() {
               </div>
             </div>
             <div class="section-title">I - Dados de Identificação do Tutor</div>
-            <div class="grid"><div class="field"><strong>Responsável:</strong> ${tutor.name}</div><div class="field"><strong>Telefone:</strong> ${tutor.phone}</div></div>
+            <div class="grid">
+              <div class="field"><strong>Responsável:</strong> ${tutor.name}</div>
+              <div class="field"><strong>Telefone:</strong> ${tutor.phone}</div>
+            </div>
             <div class="section-title">II - Características Gerais do Animal</div>
-            <div class="grid-3"><div class="field"><strong>Nome do Pet:</strong> ${pet.name}</div><div class="field"><strong>Espécie:</strong> <span class="badge">${pet.species}</span></div><div class="field"><strong>Raça Cadastrada:</strong> ${pet.breed}</div></div>
-            <div class="section-title">V - Prescrição Dietética</div>
-            <table class="table"><thead><tr><th>Medicamento</th><th>Dosagem</th><th>Horários</th></tr></thead><tbody>${meds.length === 0 ? "<tr><td colspan='3'>Nenhum ativo.</td></tr>" : meds.map((m: any) => `<tr><td><strong>${m.medication_name}</strong></td><td>${m.dosage}</td><td>${m.frequencies?.join(", ") || "-"}</td></tr>`).join("")}</tbody></table>
+            <div class="grid-3">
+              <div class="field"><strong>Nome do Pet:</strong> ${pet.name}</div>
+              <div class="field"><strong>Espécie:</strong> <span class="badge">${pet.species}</span></div>
+              <div class="field"><strong>Raça Cadastrada:</strong> ${pet.breed}</div>
+            </div>
+            <div class="section-title">III - Avaliação Clínica e Sanitária</div>
+            <div class="grid">
+              <div class="field"><strong>Protocolo de Vacinas:</strong> ${health?.vaccines_up_to_date ? "Em Dia" : "Desatualizado"}</div>
+              <div class="field"><strong>Último Vermífugo:</strong> ${health?.last_deworming_date || "Sem registro"}</div>
+            </div>
+            <div class="section-title">V - Prescrição Dietética e Farmacológica Diária</div>
+            <table class="table">
+              <thead><tr><th>Medicamento</th><th>Dosagem</th><th>Horários</th></tr></thead>
+              <tbody>
+                ${meds.length === 0 ? "<tr><td colspan='3'>Nenhum ativo.</td></tr>" : meds.map((m: any) => `<tr><td><strong>${m.medication_name}</strong></td><td>${m.dosage}</td><td>${m.frequencies?.join(", ") || "-"}</td></tr>`).join("")}
+              </tbody>
+            </table>
             <div class="footer">Ficha Clínica Oficial emitida em ${new Date().toLocaleDateString("pt-BR")}</div>
           </body>
         </html>
       `);
+
       printWindow.document.close();
       printWindow.print();
     } catch (err: any) {
@@ -271,7 +290,6 @@ export default function Customers() {
         <button onClick={() => { setEditingTutorId(null); setIsModalOpen(true); }} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 cursor-pointer shadow-sm">+ Novo Tutor</button>
       </div>
 
-      {/* Tabela de Tutores */}
       <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
         {loading ? (
           <div className="p-8 text-center text-sm text-slate-500">A processar dados...</div>
@@ -294,7 +312,6 @@ export default function Customers() {
                   <td className="px-6 py-4 font-medium">{customer.cpf || "-"}</td>
                   <td className="px-6 py-4 text-slate-600 font-medium">{customer.email || "-"}</td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    {/* NOVO BOTÃO LINK MÁGICO ADICIONADO */}
                     <button onClick={() => handleCopyExternalLink(customer)} className="text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2.5 py-1.5 rounded-lg hover:bg-emerald-200 transition-all cursor-pointer">🔗 Link Cliente</button>
                     <button onClick={() => { setSelectedCustomerId(customer.id); setSelectedCustomerName(customer.name); loadPets(customer.id); }} className="text-xs font-bold text-indigo-700 bg-indigo-100 border border-indigo-300 px-2.5 py-1.5 rounded-lg hover:bg-indigo-200 cursor-pointer">🔍 Ver Pets</button>
                     <button onClick={() => handleOpenEditTutor(customer)} className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-1.5 rounded-lg hover:bg-amber-200 cursor-pointer">✏️ Editar</button>
@@ -313,6 +330,7 @@ export default function Customers() {
             <h3 className="text-base font-extrabold text-slate-900">🐾 Animais de {selectedCustomerName}</h3>
             <button onClick={() => { setEditingPetId(null); setIsPetModalOpen(true); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm">+ Adicionar Pet</button>
           </div>
+
           {petList.length === 0 ? (
             <div className="text-center py-8 text-xs text-slate-600 bg-white rounded-2xl border border-slate-300 font-bold">Nenhum animal cadastrado.</div>
           ) : (
@@ -353,15 +371,12 @@ export default function Customers() {
                 <button onClick={() => setDeleteModal({ isOpen: true, type: "pet", id: selectedPetDetails.id, name: selectedPetDetails.name })} className="rounded-lg bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
               </div>
             </div>
-            <div className="bg-slate-100 p-3 rounded-xl border border-slate-300 text-slate-900 text-xs font-medium space-y-1">
-              <h4 className="font-extrabold uppercase text-[10px] tracking-wide mb-1">🏥 Saúde básica</h4>
-              <p><strong>Status de Vacinação:</strong> {selectedPetDetails.health?.vaccines_up_to_date ? "✅ Em Dia" : "❌ Desatualizada"}</p>
-              <p><strong>Patologias Registradas:</strong> {selectedPetDetails.health?.has_diseases || "Nenhuma doença relatada"}</p>
-            </div>
             {selectedPetDetails.meds && selectedPetDetails.meds.length > 0 && (
               <div className="bg-purple-50 border border-purple-300 p-3 rounded-xl text-purple-950 text-xs font-medium">
                 <h4 className="font-bold text-purple-900 uppercase text-[10px] mb-1">💊 Medicamentos Ativos</h4>
-                {selectedPetDetails.meds.map((m: any, i: number) => (<p key={i}>• <strong>{m.medication_name}</strong> ({m.dosage}) — Horários: {m.frequencies?.join(", ")}</p>))}
+                {selectedPetDetails.meds.map((m: any, i: number) => (
+                  <p key={i}>• <strong>{m.medication_name}</strong> ({m.dosage}) — Horários: {m.frequencies?.join(", ")}</p>
+                ))}
               </div>
             )}
             <div className="flex justify-end pt-2">

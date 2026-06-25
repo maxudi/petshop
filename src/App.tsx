@@ -3,24 +3,20 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase.ts";
 
-// Importações dos seus componentes e páginas existentes
-import Login from "./components/Login.tsx";
+import Login from "./pages/Login.tsx";
 import Customers from "./components/Customers.tsx";
-import ExternalPetForm from "./components/ExternalPetForm.tsx";
+import ExternalPetForm from "./pages/ExternalPetForm.tsx";
 
-// Componente de Guarda de Rota (Validação de Sessão Administrativa)
 function ProtectedRouteLayout() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verifica sessão atual no Supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Escuta mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
@@ -36,12 +32,10 @@ function ProtectedRouteLayout() {
     );
   }
 
-  // Se não estiver logado, joga para a tela de login
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
-  // Se estiver logado, renderiza a rota filha interna do sistema (ex: /customers)
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-7xl">
@@ -55,15 +49,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* =========================================================================
-            1. ROTAS PÚBLICAS (Acessíveis por qualquer pessoa SEM usuário e senha)
-           ========================================================================= */}
-        <Route path="/login" element={<Login />} />
+        {/* ================= ROTAS PÚBLICAS ================= */}
+        {/* Satisfeita a propriedade onLoginSuccess exigida pelo componente original */}
+        <Route path="/login" element={<Login onLoginSuccess={() => {}} />} />
         
-        {/* ROTA MÁGICA: Acesso direto do Tutor através do link gerado no painel */}
+        {/* Rota pública de auto-preenchimento para o cliente final */}
         <Route path="/prontuario-externo" element={<ExternalPetForm />} />
         
-        {/* Rota de Agradecimento de Sucesso (Exibida após o cliente salvar) */}
+        {/* Rota de Agradecimento pós-envio */}
         <Route path="/obrigado" element={
           <div className="flex min-h-screen items-center justify-center bg-slate-900 text-center p-4">
             <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm border-2 border-slate-800 space-y-4">
@@ -80,19 +73,13 @@ export default function App() {
           </div>
         } />
 
-        {/* =========================================================================
-            2. ROTAS PRIVADAS (Bloqueadas por RLS e Autenticação Corporativa)
-           ========================================================================= */}
+        {/* ================= ROTAS PRIVADAS (PAINEL ADM) ================= */}
         <Route element={<ProtectedRouteLayout />}>
-          {/* Rota raiz do painel administrativo joga direto para os Clientes */}
           <Route path="/" element={<Navigate to="/customers" replace />} />
           <Route path="/customers" element={<Customers />} />
-          
-          {/* Caso você adicione novas telas internas administrativas (Ex: Dashboard, Checkins), elas entram aqui: */}
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
         </Route>
 
-        {/* Fallback de segurança: qualquer rota inexistente joga para a raiz */}
+        {/* Fallback de segurança */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
