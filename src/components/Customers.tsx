@@ -86,7 +86,6 @@ export default function Customers() {
     }
   };
 
-  // MÉTODO EXPURGADO DE VARIÁVEIS NÃO UTILIZADAS (BEHAVIOR E FEEDING REMOVIDOS)
   const handleOpenPetDetails = async (petId: string) => {
     try {
       const { data: pet, error: petErr } = await supabase.from("pets").select("*").eq("id", petId).single();
@@ -113,8 +112,6 @@ export default function Customers() {
       const { data: pet } = await supabase.from("pets").select("*").eq("id", petId).single();
       const { data: tutor } = await supabase.from("customers").select("*").eq("id", pet.customer_id).single();
       const { data: health } = await supabase.from("pet_health_profiles").select("*").eq("pet_id", petId).maybeSingle();
-      const { data: behavior } = await supabase.from("pet_behavior_profiles").select("*").eq("pet_id", petId).maybeSingle();
-      const { data: feeding } = await supabase.from("pet_feeding_routines").select("*").eq("pet_id", petId).maybeSingle();
       const { data: medsData } = await supabase.from("pet_medications").select("*").eq("pet_id", petId);
 
       const meds = medsData || [];
@@ -126,7 +123,7 @@ export default function Customers() {
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
 
-      printWindow.document.write PapelImpressao -> `
+      printWindow.document.write(`
         <html>
           <head>
             <title>Ficha - ${pet.name}</title>
