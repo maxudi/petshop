@@ -1,0 +1,55 @@
+Atue como um Desenvolvedor Senior Full外部/Fullstack de elite, especialista em React (com Vite e TypeScript), Tailwind CSS, PostgreSQL, Supabase, Docker e Easypanel. Seu objetivo é gerar um sistema SaaS completo para gerenciamento de Pet Shops e Hospedagem/Daycare de animais, baseado em uma arquitetura Multi-Tenant rigorosa com isolamento a nível de banco de dados e interface adaptável de alto contraste.
+
+Siga estritamente as diretrizes de arquitetura, banco de dados e frontend descritas abaixo:
+
+=========================================================================
+1. DIRETRIZES DO BANCO DE DADOS (SUPABASE / POSTGRESQL)
+=========================================================================
+Gere o script SQL de migração considerando:
+- Extensão "uuid-ossp" ativa e IDs baseados em gen_random_uuid().
+- Enums customizados: public.pet_size ('mini', 'pequeno', 'medio', 'grande', 'gigante') e public.user_role ('owner', 'manager', 'receptionist', 'groomer', 'veterinarian').
+- Tabela public.tenants para isolamento de empresas parceiras.
+- Tabela public.profiles vinculada ao auth.users com deleção em cascata (ON DELETE CASCADE) e tenant_id obrigatório.
+- Tabela public.customers (Tutores) contendo dados de identificação (CPF, Nome, Telefone, E-mail, Contatos de Emergência) e colunas completas de endereço, com restrição UNIQUE composta por (tenant_id, cpf).
+- Tabela public.pets com chaves estrangeiras amarradas via ON DELETE CASCADE para garantir que ao excluir um tutor ou tenant, o lixo eletrônico seja limpo. Gênero validado via CHECK ('M', 'F', 'U').
+- Tabelas modulares de extensão com relacionamento de UNICIDADE (1:1 com pets) via UNIQUE NOT NULL para Upserts limpos:
+  * public.pet_health_profiles (Vacinas, último vermífugo, texto para patologias e suporte veterinário externo).
+  * public.pet_behavior_profiles (Booleans de sociabilidade com cães/gatos/crianças, ansiedade, agressividade reativa, campos de texto para hábitos e fofocas/fobias).
+  * public.pet_feeding_routines (Nome da ração, quantidade e horários).
+- Tabelas 1:N com relacionamento em cascata:
+  * public.pet_medications para tratamentos ativos. CRÍTICO: Os horários/frequências devem ser mapeados estritamente como Array de Texto (TEXT[] DEFAULT '{}'::TEXT[] NOT NULL) nas tabelas de medicação e alimentação para sincronia perfeita com manipulação de arrays (.map()) no frontend.
+  * public.checkins para controle de hospedagem e inventário de pertences trazidos pelo tutor.
+- Índices de performance nas chaves estrangeiras e RLS (Row Level Security) ativado em todas as tabelas transacionais, utilizando uma função contextual public.get_auth_tenant_id() que filtra o tenant_id dinamicamente com base no auth.uid() do profile logado.
+
+=========================================================================
+2. DIRETRIZES DO FRONTEND (REACT + TYPESCRIPT + TAILWIND)
+=========================================================================
+- Toda a interface deve ser projetada para ALTO CONTRASTE e acessibilidade. Evite fundos cinzas muito claros com opacidades ou textos suaves sobre fundo branco. 
+- Inputs e selects devem possuir bordas sólidas, bem demarcadas (ex: border-slate-300) e fundos levemente acinzentados visíveis (ex: bg-slate-100), mudando para fundo branco puro e bordas destacadas no foco (focus:bg-white focus:border-indigo-600).
+- Proíba o uso de popups nativos do navegador como alert() e confirm() por travarem a thread principal e degradarem a experiência do usuário. Em vez disso, implemente estados de controle locais e modais customizados:
+  * NotificationModal: Centralizado, com desfoque de fundo (backdrop-blur), estilizado com emojis grandes e cores de borda condizentes ao tipo (Emerald para sucesso, Red para erro, Amber para avisos).
+  * Modal de Confirmação de Exclusão: Um card de aviso crítico com alto Z-Index (z-[60]) que exige confirmação explícita em botões estilizados antes de disparar o comando DELETE no Supabase.
+- No formulário de cadastro do Pet (PetFormModal), implemente:
+  * Sistema de Abas (Tabs) para separar Dados Básicos, Saúde, Comportamento e Rotinas de forma organizada.
+  * Uma área interativa de Drag & Drop para upload de foto de perfil usando eventos nativos do React (onDragOver, onDragLeave, onDrop) integrada a um seletor manual oculto.
+  * Uma seção na aba de saúde para uploads múltiplos de arquivos anexos (Exames em PDF, laudos, fotos de ferimentos) listando os arquivos com ícones de identificação e opção de remoção individual antes de salvar.
+  * Listas dinâmicas com tabelas locais para adicionar múltiplos medicamentos com dosagem e horários fracionados antes do envio final.
+- Na tela principal de gerenciamento (Customers.tsx), os cards dos animais devem ser retangulares, com bordas nítidas, exibindo a foto redonda emoldurada ou um emoji representativo de espécie caso não haja imagem. Ao passar o mouse (hover), os cards devem ganhar elevação e destaque visual nítido.
+
+=========================================================================
+3. FUNÇÃO DE IMPRESSÃO PROFISSIONAL (NATIVA)
+=========================================================================
+- Adicione um botão "Imprimir Ficha" nos cards e no prontuário do pet.
+- A função deve abrir uma janela oculta temporária (window.open) injetando um documento HTML minimalista e estritamente elegante, formatado exclusivamente para folhas A4 e impressoras físicas ou PDF.
+- A folha deve omitir botões e elementos de sistema. Deve exibir no topo, de forma combinada e organizada, os dados do Tutor e de seus contatos de emergência. Ao lado, deve renderizar a foto de perfil real do animal resgatada via URL assinada do Storage do Supabase (ou um placeholder limpo).
+- O corpo do documento deve ser estruturado em seções numeradas (I, II, III, IV...) utilizando cores de destaque sóbrias (como azul-petróleo ou marinho suave) para os títulos, tabelas bem alinhadas para os medicamentos e horários, e uma linha pontilhada no rodapé para assinatura física do responsável técnico.
+
+=========================================================================
+4. REQUISITOS DE COMPILAÇÃO E DEPLOY (DOCKER + EASYPANEL)
+=========================================================================
+- O código TypeScript gerado deve ser estritamente tipado. Proíba o uso do tipo 'any' implícito ou variáveis declaradas e nunca lidas (erro TS6133). Trate retornos do Supabase que possam vir como nulos avaliando-os com encadeamento opcional (?.) ou definindo fallbacks vazios (|| [] ou || {}) para blindar o build de produção.
+- Forneça a configuração de deploy multi-stage no Dockerfile utilizando Node:20-alpine para a fase de compilação (gerando a pasta dist via tsc -b && vite build) e uma imagem leve de Nginx:alpine para a fase de execução.
+- Inclua o arquivo nginx.conf configurado especificamente para Single Page Applications (SPA), adicionando a regra 'try_files $uri $uri/ /index.html;' para interceptar rotas do React Router e prevenir erros 404 ao atualizar páginas internas no servidor de produção, além de regras básicas de cache para arquivos estáticos (.js, .css, imagens).
+- Forneça também o arquivo .dockerignore mapeando node_modules e dist para otimização de cache.
+
+Gere os códigos completos, limpos, modulares e prontos para serem copiados e colados nas pastas correspondentes do projeto.

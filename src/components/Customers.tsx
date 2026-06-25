@@ -7,6 +7,7 @@ import NotificationModal from "./NotificationModal.tsx";
 
 interface Customer {
   id: string;
+  tenant_id: string; // Adicionado para gerar o link multi-tenant de forma estrita
   name: string;
   phone: string;
   cpf: string;
@@ -59,6 +60,20 @@ export default function Customers() {
     setNoti({ isOpen: true, type, title, message });
   };
 
+  // --- FUNÇÃO ADICIONADA: GERADOR E COPIADOR DE LINK MÁGICO ---
+  const handleCopyExternalLink = (customer: Customer) => {
+    const baseUrl = window.location.origin;
+    // Monta o link levando o tenant_id e o customer_id em formato de query params estritos
+    const externalLink = `${baseUrl}/prontuario-externo?t=${customer.tenant_id}&c=${customer.id}`;
+    
+    navigator.clipboard.writeText(externalLink);
+    showNotify(
+      "success", 
+      "Link Copiado! 🔗", 
+      `O link de auto-preenchimento para "${customer.name}" foi copiado para a área de transferência. Envie via WhatsApp!`
+    );
+  };
+
   const fetchCustomers = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -104,12 +119,7 @@ export default function Customers() {
       const meds = medsData || [];
       const signedPhoto = pet.photo_url ? await getPresignedUrl(pet.photo_url) : null;
 
-      setSelectedPetDetails({ 
-        ...pet, 
-        signedPhoto, 
-        health, 
-        meds 
-      });
+      setSelectedPetDetails({ ...pet, signedPhoto, health, meds });
     } catch (err: any) {
       showNotify("error", "Erro ao Buscar Ficha", err.message);
     }
@@ -165,39 +175,16 @@ export default function Customers() {
                 ${petPhotoUrl ? `<img src="${petPhotoUrl}" alt="" />` : `<span style="font-size:32px; opacity:0.4;">🐾</span>`}
               </div>
             </div>
-
             <div class="section-title">I - Dados de Identificação do Tutor</div>
-            <div class="grid">
-              <div class="field"><strong>Responsável:</strong> ${tutor.name}</div>
-              <div class="field"><strong>Telefone:</strong> ${tutor.phone}</div>
-            </div>
-
+            <div class="grid"><div class="field"><strong>Responsável:</strong> ${tutor.name}</div><div class="field"><strong>Telefone:</strong> ${tutor.phone}</div></div>
             <div class="section-title">II - Características Gerais do Animal</div>
-            <div class="grid-3">
-              <div class="field"><strong>Nome do Pet:</strong> ${pet.name}</div>
-              <div class="field"><strong>Espécie:</strong> <span class="badge">${pet.species}</span></div>
-              <div class="field"><strong>Raça Cadastrada:</strong> ${pet.breed}</div>
-            </div>
-
-            <div class="section-title">III - Avaliação Clinical e Sanitária</div>
-            <div class="grid">
-              <div class="field"><strong>Protocolo de Vacinas:</strong> ${health?.vaccines_up_to_date ? "Em Dia" : "Desatualizado"}</div>
-              <div class="field"><strong>Último Vermífugo:</strong> ${health?.last_deworming_date || "Sem registro"}</div>
-            </div>
-
-            <div class="section-title">V - Prescrição Dietética e Farmacológica Diária</div>
-            <table class="table">
-              <thead><tr><th>Medicamento</th><th>Dosagem</th><th>Horários</th></tr></thead>
-              <tbody>
-                ${meds.length === 0 ? "<tr><td colspan='3'>Nenhum ativo.</td></tr>" : meds.map((m: any) => `<tr><td><strong>${m.medication_name}</strong></td><td>${m.dosage}</td><td>${m.frequencies?.join(", ") || "-"}</td></tr>`).join("")}
-              </tbody>
-            </table>
-
+            <div class="grid-3"><div class="field"><strong>Nome do Pet:</strong> ${pet.name}</div><div class="field"><strong>Espécie:</strong> <span class="badge">${pet.species}</span></div><div class="field"><strong>Raça Cadastrada:</strong> ${pet.breed}</div></div>
+            <div class="section-title">V - Prescrição Dietética</div>
+            <table class="table"><thead><tr><th>Medicamento</th><th>Dosagem</th><th>Horários</th></tr></thead><tbody>${meds.length === 0 ? "<tr><td colspan='3'>Nenhum ativo.</td></tr>" : meds.map((m: any) => `<tr><td><strong>${m.medication_name}</strong></td><td>${m.dosage}</td><td>${m.frequencies?.join(", ") || "-"}</td></tr>`).join("")}</tbody></table>
             <div class="footer">Ficha Clínica Oficial emitida em ${new Date().toLocaleDateString("pt-BR")}</div>
           </body>
         </html>
       `);
-
       printWindow.document.close();
       printWindow.print();
     } catch (err: any) {
@@ -216,10 +203,8 @@ export default function Customers() {
     setIsModalOpen(true);
   };
 
-  // Processa a exclusão efetiva após confirmação no Modal customizado
   const handleConfirmDelete = async () => {
     const { type, id, name } = deleteModal;
-    
     if (type === "tutor") {
       const { error } = await supabase.from("customers").delete().eq("id", id);
       if (!error) {
@@ -281,11 +266,12 @@ export default function Customers() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Clientes e Tutores</h2>
-          <p className="text-sm text-slate-500">Gerencie os tutores e animais cadastrados.</p>
+          <p className="text-sm text-slate-500">Gerencie os tutores, copie links de auto-admissão ou abra prontuários.</p>
         </div>
         <button onClick={() => { setEditingTutorId(null); setIsModalOpen(true); }} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 cursor-pointer shadow-sm">+ Novo Tutor</button>
       </div>
 
+      {/* Tabela de Tutores */}
       <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
         {loading ? (
           <div className="p-8 text-center text-sm text-slate-500">A processar dados...</div>
@@ -308,6 +294,8 @@ export default function Customers() {
                   <td className="px-6 py-4 font-medium">{customer.cpf || "-"}</td>
                   <td className="px-6 py-4 text-slate-600 font-medium">{customer.email || "-"}</td>
                   <td className="px-6 py-4 text-right space-x-2">
+                    {/* NOVO BOTÃO LINK MÁGICO ADICIONADO */}
+                    <button onClick={() => handleCopyExternalLink(customer)} className="text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2.5 py-1.5 rounded-lg hover:bg-emerald-200 transition-all cursor-pointer">🔗 Link Cliente</button>
                     <button onClick={() => { setSelectedCustomerId(customer.id); setSelectedCustomerName(customer.name); loadPets(customer.id); }} className="text-xs font-bold text-indigo-700 bg-indigo-100 border border-indigo-300 px-2.5 py-1.5 rounded-lg hover:bg-indigo-200 cursor-pointer">🔍 Ver Pets</button>
                     <button onClick={() => handleOpenEditTutor(customer)} className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-1.5 rounded-lg hover:bg-amber-200 cursor-pointer">✏️ Editar</button>
                     <button onClick={() => setDeleteModal({ isOpen: true, type: "tutor", id: customer.id, name: customer.name })} className="text-xs font-bold text-red-700 bg-red-100 border border-red-300 px-2.5 py-1.5 rounded-lg hover:bg-red-200 cursor-pointer">🗑️ Excluir</button>
@@ -325,7 +313,6 @@ export default function Customers() {
             <h3 className="text-base font-extrabold text-slate-900">🐾 Animais de {selectedCustomerName}</h3>
             <button onClick={() => { setEditingPetId(null); setIsPetModalOpen(true); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm">+ Adicionar Pet</button>
           </div>
-
           {petList.length === 0 ? (
             <div className="text-center py-8 text-xs text-slate-600 bg-white rounded-2xl border border-slate-300 font-bold">Nenhum animal cadastrado.</div>
           ) : (
@@ -350,7 +337,7 @@ export default function Customers() {
       )}
 
       {selectedPetDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-955/50 backdrop-blur-xs p-4">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-300 max-h-[85vh] overflow-y-auto space-y-6">
             <div className="flex items-center space-x-4 border-b border-slate-200 pb-4">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-slate-300 bg-slate-100 flex-shrink-0">
@@ -374,9 +361,7 @@ export default function Customers() {
             {selectedPetDetails.meds && selectedPetDetails.meds.length > 0 && (
               <div className="bg-purple-50 border border-purple-300 p-3 rounded-xl text-purple-950 text-xs font-medium">
                 <h4 className="font-bold text-purple-900 uppercase text-[10px] mb-1">💊 Medicamentos Ativos</h4>
-                {selectedPetDetails.meds.map((m: any, i: number) => (
-                  <p key={i}>• <strong>{m.medication_name}</strong> ({m.dosage}) — Horários: {m.frequencies?.join(", ")}</p>
-                ))}
+                {selectedPetDetails.meds.map((m: any, i: number) => (<p key={i}>• <strong>{m.medication_name}</strong> ({m.dosage}) — Horários: {m.frequencies?.join(", ")}</p>))}
               </div>
             )}
             <div className="flex justify-end pt-2">
@@ -387,7 +372,7 @@ export default function Customers() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-955/50 backdrop-blur-xs p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-300 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-4">{editingTutorId ? "📝 Editar Dados" : "Cadastrar Novo Tutor"}</h3>
             <form onSubmit={handleSubmitTutor} className="space-y-4">
@@ -405,27 +390,18 @@ export default function Customers() {
         </div>
       )}
 
-      {/* NOVO MODAL CUSTOMIZADO DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* MODAL CUSTOMIZADO DE EXCLUSÃO */}
       {deleteModal.isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-955/60 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-300 text-center space-y-4">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
-              ⚠️
-            </div>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">⚠️</div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">Confirmar Exclusão</h3>
-              <p className="text-sm text-slate-500 mt-2">
-                Tem certeza de que deseja deletar o {deleteModal.type === "tutor" ? "tutor" : "pet"}{" "}
-                <span className="font-extrabold text-slate-800">"{deleteModal.name}"</span>? Esta ação não poderá ser desfeita.
-              </p>
+              <p className="text-sm text-slate-500 mt-2">Tem certeza de que deseja deletar o {deleteModal.type === "tutor" ? "tutor" : "pet"} <span className="font-extrabold text-slate-800">"{deleteModal.name}"</span>? Esta ação é irreversível.</p>
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: "tutor", id: "", name: "" })} className="flex-1 rounded-xl border-2 border-slate-300 bg-slate-100 text-slate-700 font-bold py-2.5 text-sm hover:bg-slate-200 transition-colors cursor-pointer">
-                Cancelar
-              </button>
-              <button type="button" onClick={handleConfirmDelete} className="flex-1 rounded-xl bg-red-600 text-white font-bold py-2.5 text-sm hover:bg-red-700 transition-colors cursor-pointer shadow-sm">
-                Sim, Excluir
-              </button>
+              <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: "tutor", id: "", name: "" })} className="flex-1 rounded-xl border-2 border-slate-300 bg-slate-100 text-slate-700 font-bold py-2.5 text-sm cursor-pointer">Cancelar</button>
+              <button type="button" onClick={handleConfirmDelete} className="flex-1 rounded-xl bg-red-600 text-white font-bold py-2.5 text-sm hover:bg-red-700 cursor-pointer shadow-sm">Sim, Excluir</button>
             </div>
           </div>
         </div>
