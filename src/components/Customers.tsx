@@ -86,6 +86,7 @@ export default function Customers() {
     }
   };
 
+  // MÉTODO EXPURGADO DE VARIÁVEIS NÃO UTILIZADAS (BEHAVIOR E FEEDING REMOVIDOS)
   const handleOpenPetDetails = async (petId: string) => {
     try {
       const { data: pet, error: petErr } = await supabase.from("pets").select("*").eq("id", petId).single();
@@ -94,7 +95,7 @@ export default function Customers() {
 
       if (petErr) throw petErr;
       const meds = medsData || [];
-      let signedPhoto = pet.photo_url ? await getPresignedUrl(pet.photo_url) : null;
+      const signedPhoto = pet.photo_url ? await getPresignedUrl(pet.photo_url) : null;
 
       setSelectedPetDetails({ 
         ...pet, 
@@ -125,7 +126,7 @@ export default function Customers() {
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
 
-      printWindow.document.write(`
+      printWindow.document.write PapelImpressao -> `
         <html>
           <head>
             <title>Ficha - ${pet.name}</title>
@@ -357,7 +358,7 @@ export default function Customers() {
               <div className="flex flex-col space-y-2">
                 <button onClick={() => handlePrintPet(selectedPetDetails.id)} className="rounded-lg bg-indigo-50 border border-indigo-300 text-indigo-700 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100">🖨️ Imprimir</button>
                 <button onClick={() => { setEditingPetId(selectedPetDetails.id); setIsPetModalOpen(true); setSelectedPetDetails(null); }} className="rounded-lg bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1.5 text-xs font-bold hover:bg-amber-200">✏️ Alterar</button>
-                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-800 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
+                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
               </div>
             </div>
             <div className="bg-slate-100 p-3 rounded-xl border border-slate-300 text-slate-900 text-xs font-medium space-y-1">
