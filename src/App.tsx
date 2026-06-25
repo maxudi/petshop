@@ -3,9 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase.ts";
 
-import Login from "./pages/Login.tsx";
+import Login from "./components/Login.tsx";
 import Customers from "./components/Customers.tsx";
-import ExternalPetForm from "./pages/ExternalPetForm.tsx";
+import ExternalPetForm from "./components/ExternalPetForm.tsx";
 
 function ProtectedRouteLayout() {
   const [session, setSession] = useState<any>(null);
