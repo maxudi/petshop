@@ -37,6 +37,14 @@ export default function Customers() {
   const [petList, setPetList] = useState<any[]>([]);
   const [selectedPetDetails, setSelectedPetDetails] = useState<any | null>(null);
 
+  // Estado para Modal de Confirmação Customizado de Exclusão
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: "tutor" | "pet";
+    id: string;
+    name: string;
+  }>({ isOpen: false, type: "tutor", id: "", name: "" });
+
   // Estado de Notificações Customizadas
   const [noti, setNoti] = useState({ 
     isOpen: false, 
@@ -171,7 +179,7 @@ export default function Customers() {
               <div class="field"><strong>Raça Cadastrada:</strong> ${pet.breed}</div>
             </div>
 
-            <div class="section-title">III - Avaliação Clínica e Sanitária</div>
+            <div class="section-title">III - Avaliação Clinical e Sanitária</div>
             <div class="grid">
               <div class="field"><strong>Protocolo de Vacinas:</strong> ${health?.vaccines_up_to_date ? "Em Dia" : "Desatualizado"}</div>
               <div class="field"><strong>Último Vermífugo:</strong> ${health?.last_deworming_date || "Sem registro"}</div>
@@ -208,17 +216,30 @@ export default function Customers() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteTutor = async (id: string, tutorName: string) => {
-    if (confirm(`⚠️ Tem certeza de que deseja deletar o tutor "${tutorName}"?`)) {
+  // Processa a exclusão efetiva após confirmação no Modal customizado
+  const handleConfirmDelete = async () => {
+    const { type, id, name } = deleteModal;
+    
+    if (type === "tutor") {
       const { error } = await supabase.from("customers").delete().eq("id", id);
       if (!error) {
         if (selectedCustomerId === id) setSelectedCustomerId(null);
         fetchCustomers();
-        showNotify("success", "Tutor Removido", `O registro de "${tutorName}" foi excluído.`);
+        showNotify("success", "Tutor Removido", `O registro de "${name}" foi excluído.`);
       } else {
         showNotify("error", "Erro ao Excluir", error.message);
       }
+    } else if (type === "pet") {
+      const { error } = await supabase.from("pets").delete().eq("id", id);
+      if (!error) {
+        setSelectedPetDetails(null);
+        if (selectedCustomerId) loadPets(selectedCustomerId);
+        showNotify("success", "Animal Removido", `Ficha de "${name}" excluída.`);
+      } else {
+        showNotify("error", "Erro", error.message);
+      }
     }
+    setDeleteModal({ isOpen: false, type: "tutor", id: "", name: "" });
   };
 
   const handleSubmitTutor = async (e: React.FormEvent) => {
@@ -252,19 +273,6 @@ export default function Customers() {
       showNotify("success", "Dados Gravados", "Tutor sincronizado com sucesso.");
     } else {
       showNotify("error", "Falha", responseError.message);
-    }
-  };
-
-  const handleDeletePet = async (id: string, petName: string) => {
-    if (confirm(`🗑️ Deseja remover permanentemente a ficha de "${petName}"?`)) {
-      const { error } = await supabase.from("pets").delete().eq("id", id);
-      if (!error) {
-        setSelectedPetDetails(null);
-        if (selectedCustomerId) loadPets(selectedCustomerId);
-        showNotify("success", "Animal Removido", `Ficha de "${petName}" excluída.`);
-      } else {
-        showNotify("error", "Erro", error.message);
-      }
     }
   };
 
@@ -302,7 +310,7 @@ export default function Customers() {
                   <td className="px-6 py-4 text-right space-x-2">
                     <button onClick={() => { setSelectedCustomerId(customer.id); setSelectedCustomerName(customer.name); loadPets(customer.id); }} className="text-xs font-bold text-indigo-700 bg-indigo-100 border border-indigo-300 px-2.5 py-1.5 rounded-lg hover:bg-indigo-200 cursor-pointer">🔍 Ver Pets</button>
                     <button onClick={() => handleOpenEditTutor(customer)} className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-1.5 rounded-lg hover:bg-amber-200 cursor-pointer">✏️ Editar</button>
-                    <button onClick={() => handleDeleteTutor(customer.id, customer.name)} className="text-xs font-bold text-red-700 bg-red-100 border border-red-300 px-2.5 py-1.5 rounded-lg hover:bg-red-200 cursor-pointer">🗑️ Excluir</button>
+                    <button onClick={() => setDeleteModal({ isOpen: true, type: "tutor", id: customer.id, name: customer.name })} className="text-xs font-bold text-red-700 bg-red-100 border border-red-300 px-2.5 py-1.5 rounded-lg hover:bg-red-200 cursor-pointer">🗑️ Excluir</button>
                   </td>
                 </tr>
               ))}
@@ -342,7 +350,7 @@ export default function Customers() {
       )}
 
       {selectedPetDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-955/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-300 max-h-[85vh] overflow-y-auto space-y-6">
             <div className="flex items-center space-x-4 border-b border-slate-200 pb-4">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-slate-300 bg-slate-100 flex-shrink-0">
@@ -355,7 +363,7 @@ export default function Customers() {
               <div className="flex flex-col space-y-2">
                 <button onClick={() => handlePrintPet(selectedPetDetails.id)} className="rounded-lg bg-indigo-50 border border-indigo-300 text-indigo-700 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100">🖨️ Imprimir</button>
                 <button onClick={() => { setEditingPetId(selectedPetDetails.id); setIsPetModalOpen(true); setSelectedPetDetails(null); }} className="rounded-lg bg-amber-100 border border-amber-400 text-amber-800 px-3 py-1.5 text-xs font-bold hover:bg-amber-200">✏️ Alterar</button>
-                <button onClick={() => handleDeletePet(selectedPetDetails.id, selectedPetDetails.name)} className="rounded-lg bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
+                <button onClick={() => setDeleteModal({ isOpen: true, type: "pet", id: selectedPetDetails.id, name: selectedPetDetails.name })} className="rounded-lg bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 text-xs font-bold hover:bg-red-200">🗑️ Deletar</button>
               </div>
             </div>
             <div className="bg-slate-100 p-3 rounded-xl border border-slate-300 text-slate-900 text-xs font-medium space-y-1">
@@ -379,7 +387,7 @@ export default function Customers() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-955/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-300 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-4">{editingTutorId ? "📝 Editar Dados" : "Cadastrar Novo Tutor"}</h3>
             <form onSubmit={handleSubmitTutor} className="space-y-4">
@@ -393,6 +401,32 @@ export default function Customers() {
                 <button type="submit" className="rounded-xl bg-indigo-600 text-white font-bold px-4 py-2 text-sm">Salvar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NOVO MODAL CUSTOMIZADO DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-300 text-center space-y-4">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
+              ⚠️
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Confirmar Exclusão</h3>
+              <p className="text-sm text-slate-500 mt-2">
+                Tem certeza de que deseja deletar o {deleteModal.type === "tutor" ? "tutor" : "pet"}{" "}
+                <span className="font-extrabold text-slate-800">"{deleteModal.name}"</span>? Esta ação não poderá ser desfeita.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: "tutor", id: "", name: "" })} className="flex-1 rounded-xl border-2 border-slate-300 bg-slate-100 text-slate-700 font-bold py-2.5 text-sm hover:bg-slate-200 transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleConfirmDelete} className="flex-1 rounded-xl bg-red-600 text-white font-bold py-2.5 text-sm hover:bg-red-700 transition-colors cursor-pointer shadow-sm">
+                Sim, Excluir
+              </button>
+            </div>
           </div>
         </div>
       )}
